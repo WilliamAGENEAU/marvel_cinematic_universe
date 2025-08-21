@@ -19,13 +19,8 @@ class ErrorMessages {
 }
 
 class ImgPaths {
-  static const String logo = 'assets/images/logo.png';
   static const String logo_marvel_universe =
       'assets/images/logo-marvel-universe.png';
-  static const String logo_appwrite = 'assets/images/appwrite.png';
-  static const String logo_appwrite_buitwith =
-      'assets/images/appwrite_buitwith.png';
-  static const String bg_auth = 'assets/images/auth-bg.png';
 }
 
 class DefaultColors {

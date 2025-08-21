@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages, prefer_interpolation_to_compose_strings, deprecated_member_use
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttericon/font_awesome5_icons.dart';
 import 'package:fluttericon/mfg_labs_icons.dart';
@@ -22,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late YoutubePlayerController _ytbPlayerController;
+  late AudioPlayer _audioPlayer; // 🎵 ajout player
+
   List<Map<String, dynamic>> universe = [];
   Map<String, dynamic>? activeUniverse;
   Color menuIconColor = Colors.white;
@@ -30,12 +33,14 @@ class _HomeScreenState extends State<HomeScreen> {
   var c = CrossAxisAlignment.start;
   var m = MainAxisAlignment.start;
 
+  bool isMuted = false; // 🎵 état mute
   bool isOpened = false;
   final GlobalKey<SideMenuState> _sideMenuKey = GlobalKey<SideMenuState>();
 
   @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer(); // 🎵 init
     _initData();
   }
 
@@ -54,11 +59,33 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         activeUniverse = universe.first;
       });
-
+      // 🎵 jouer musique du 1er film
+      _playMusic(activeUniverse!["music"]);
       _ytbPlayerController = YoutubePlayerController(
         initialVideoId: activeUniverse!['YoutubeId'],
         flags: const YoutubePlayerFlags(autoPlay: false, mute: false),
       );
+    }
+  }
+
+  // 🎵 fonction jouer musique
+  Future<void> _playMusic(String filename) async {
+    await _audioPlayer.stop(); // stop musique précédente
+    if (!isMuted) {
+      await _audioPlayer.play(AssetSource("musics/$filename"));
+      // ⚠️ mets tes fichiers dans assets/musics/
+    }
+  }
+
+  // 🎵 toggle mute
+  void _toggleMute() {
+    setState(() {
+      isMuted = !isMuted;
+    });
+    if (isMuted) {
+      _audioPlayer.pause();
+    } else {
+      _playMusic(activeUniverse!["music"]);
     }
   }
 
@@ -92,6 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       state.openSideMenu();
     }
+  }
+
+  @override
+  void dispose() {
+    _ytbPlayerController.dispose();
+    _audioPlayer.dispose(); // 🎵 libère player
+    super.dispose();
   }
 
   @override
@@ -149,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             activeUniverse!["MoviewName"],
                             style: GoogleFonts.anton(
-                              fontSize: 32,
+                              fontSize: 26, // ⬅️ réduit (avant 32)
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                               letterSpacing: 0.5,
@@ -157,17 +191,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            activeUniverse!["RunTime"],
+                            activeUniverse!["ReleaseDate"],
                             style: GoogleFonts.openSans(
-                              fontSize: 16,
+                              fontSize: 18, // ⬅️ augmenté (avant 16)
                               color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            activeUniverse!["ReleaseDate"], // ⚡️ nouvelle ligne
+                            activeUniverse!["RunTime"],
                             style: GoogleFonts.openSans(
-                              fontSize: 15,
+                              fontSize: 17, // ⬅️ augmenté (avant 15)
                               color: Colors.white70,
                               fontStyle: FontStyle.italic,
                             ),
@@ -195,10 +229,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                "Bande-annonce", // ⚡️ nouveau texte
+                                "Bande-annonce",
                                 style: GoogleFonts.openSans(
-                                  fontSize: 13,
+                                  fontSize: 15, // ⬅️ augmenté (avant 13)
                                   color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // 🎵 Bouton mute/unmute
+                              IconButton(
+                                onPressed: _toggleMute,
+                                icon: Icon(
+                                  isMuted ? Icons.volume_off : Icons.volume_up,
+                                  color: Colors.white,
+                                  size: 24,
                                 ),
                               ),
                             ],
@@ -207,7 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-
                   Expanded(
                     flex: 1,
                     child: Padding(
@@ -220,21 +263,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(
+                                // 👉 Ici, on affiche la phase active
+                                Padding(
+                                  padding: const EdgeInsets.only(
                                     left: Pad.md,
                                     bottom: Pad.sm,
                                   ),
                                   child: Text(
-                                    "Marvel Cinematic Universe Ordre",
-                                    style: TextStyle(
-                                      fontSize: 16,
+                                    activeUniverse!["Phase"], // ⚡️ titre dynamique
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                                 SizedBox(
-                                  height: 130,
+                                  height: 160,
                                   child: ListView.builder(
                                     itemCount: universe.length,
                                     shrinkWrap: true,
@@ -246,6 +291,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                             activeUniverse!["id"],
                                       );
 
+                                      // ⚡️ Définir couleur selon phase
+                                      Color phaseColor;
+                                      switch (universe[i]["Phase"]) {
+                                        case "Phase 1":
+                                          phaseColor = Colors.red;
+                                          break;
+                                        case "Phase 2":
+                                          phaseColor = Colors.blue;
+                                          break;
+                                        case "Phase 3":
+                                          phaseColor = Colors.green;
+                                          break;
+                                        case "Phase 4":
+                                          phaseColor = Colors.yellow;
+                                          break;
+                                        case "Phase 5":
+                                          phaseColor = Colors.orange;
+                                          break;
+                                        case "Phase 6":
+                                          phaseColor = Colors.purple;
+                                          break;
+                                        default:
+                                          phaseColor =
+                                              DefaultColors.primary; // fallback
+                                      }
+
                                       return TimelineTile(
                                         axis: TimelineAxis.horizontal,
                                         alignment: TimelineAlign.manual,
@@ -255,7 +326,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             setState(() {
                                               activeUniverse = universe[i];
                                             });
+                                            _playMusic(
+                                              activeUniverse!["music"],
+                                            );
                                             updateTitlePlacement();
+                                            _updateMenuIconColor(); // ⚡️ recheck contraste menu
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.only(
@@ -268,17 +343,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                         indicatorStyle: IndicatorStyle(
-                                          width: 14,
-                                          height: 14,
-                                          color: DefaultColors.baby_white
-                                              .withOpacity(0.9),
+                                          width: 16, // ⬅️ augmenté (avant 14)
+                                          height: 16, // ⬅️ augmenté (avant 14)
+                                          color: phaseColor,
                                         ),
                                         beforeLineStyle: LineStyle(
                                           color: index >= i
-                                              ? DefaultColors.primary
+                                              ? phaseColor
                                               : DefaultColors.baby_white
                                                     .withOpacity(0.8),
-                                          thickness: 1,
+                                          thickness: 3, // ⬅️ épaissi (avant 1)
                                         ),
                                       );
                                     },
