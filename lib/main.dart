@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:marvel_cinematic_universe/views/home/home.dart';
+import 'package:marvel_cinematic_universe/views/home/tierlist_page.dart';
 
 import 'helpers/static-data.dart';
 
@@ -54,7 +55,18 @@ class _AppState extends State<App> {
           bodyLarge: TextStyle(color: DefaultColors.grey, fontSize: 16),
         ),
       ),
-      home: const HomeScreen(), // 🚀 démarre directement sur Home
+      initialRoute: '/',
+      routes: {'/': (context) => const HomeScreen()},
+      // 🚀 pour gérer les routes avec paramètres
+      onGenerateRoute: (settings) {
+        if (settings.name == '/tierlist') {
+          final args = settings.arguments as List<Map<String, dynamic>>? ?? [];
+          return MaterialPageRoute(
+            builder: (context) => TierListPage(seenMovies: args),
+          );
+        }
+        return null;
+      },
     );
   }
 }

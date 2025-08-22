@@ -1,27 +1,63 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:fluttericon/font_awesome5_icons.dart';
+import 'package:marvel_cinematic_universe/controller/universeController.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
 import 'package:marvel_cinematic_universe/helpers/utilities.dart';
+import 'package:marvel_cinematic_universe/views/home/tierlist_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-Widget ASide(String email, BuildContext context) {
+/// ASide maintenant accepte:
+/// - [onStopAudio] pour couper la musique quand on va sur la Tierlist
+/// - [closeMenu] pour fermer le SideMenu avant navigation
+Widget ASide(
+  String email,
+  BuildContext context, {
+  Future<void> Function()? onStopAudio,
+  VoidCallback? closeMenu,
+}) {
+  Future<void> openTierlist() async {
+    // 1) fermer le menu s'il y a une callback
+    closeMenu?.call();
+
+    // 2) couper l'audio s'il y a une callback
+    if (onStopAudio != null) {
+      await onStopAudio();
+    }
+
+    // 3) récupérer les IDs vus depuis SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final seenIds = (prefs.getStringList('seen_ids') ?? [])
+        .map(int.parse)
+        .toSet();
+
+    // 4) construire la liste des films vus à partir de universeMock
+    final seenMovies = universeMock
+        .where((m) => seenIds.contains(m["id"] as int))
+        .toList(growable: false);
+
+    // 5) naviguer vers la TierListPage en lui passant les films vus
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TierListPage(seenMovies: seenMovies)),
+    );
+  }
+
   return Column(
     children: [
       Expanded(
         flex: 1,
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(vertical: 50.0),
+          padding: const EdgeInsets.symmetric(vertical: 50.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.only(left: 16.0),
+                padding: const EdgeInsets.only(left: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 16.0),
+                    const SizedBox(height: 16.0),
                     Text(
                       email,
                       style: TextStyle(
@@ -29,12 +65,13 @@ Widget ASide(String email, BuildContext context) {
                         fontSize: 14,
                       ),
                     ),
-                    SizedBox(height: 20.0),
+                    const SizedBox(height: 20.0),
                   ],
                 ),
               ),
               ListTile(
                 onTap: () {
+                  closeMenu?.call();
                   Navigator.pushNamed(context, '/');
                 },
                 leading: Icon(
@@ -42,7 +79,18 @@ Widget ASide(String email, BuildContext context) {
                   size: 20.0,
                   color: DefaultColors.baby_white,
                 ),
-                title: Text("Ordre MCU", style: TextStyle(fontSize: 14)),
+                title: const Text("Ordre MCU", style: TextStyle(fontSize: 14)),
+                textColor: DefaultColors.baby_white,
+                dense: true,
+              ),
+              ListTile(
+                onTap: openTierlist, // ✅ ouvre la tierlist correctement
+                leading: Icon(
+                  FontAwesome5.list,
+                  size: 20.0,
+                  color: DefaultColors.baby_white,
+                ),
+                title: const Text("Tierlist", style: TextStyle(fontSize: 14)),
                 textColor: DefaultColors.baby_white,
                 dense: true,
               ),
@@ -57,15 +105,17 @@ Widget ASide(String email, BuildContext context) {
                 ),
                 title: Row(
                   children: [
-                    Text("Comics", style: TextStyle(fontSize: 14)),
-                    SizedBox(width: 6),
+                    const Text("Comics", style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: DefaultColors.danger,
-                        borderRadius: BorderRadius.all(Radius.circular(3)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(3),
+                        ),
                       ),
-                      child: Text("WIP", style: TextStyle(fontSize: 11)),
+                      child: const Text("WIP", style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),
@@ -83,15 +133,17 @@ Widget ASide(String email, BuildContext context) {
                 ),
                 title: Row(
                   children: [
-                    Text("Characters", style: TextStyle(fontSize: 14)),
-                    SizedBox(width: 6),
+                    const Text("Characters", style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: DefaultColors.danger,
-                        borderRadius: BorderRadius.all(Radius.circular(3)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(3),
+                        ),
                       ),
-                      child: Text("WIP", style: TextStyle(fontSize: 11)),
+                      child: const Text("WIP", style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),
@@ -109,15 +161,17 @@ Widget ASide(String email, BuildContext context) {
                 ),
                 title: Row(
                   children: [
-                    Text("Stories", style: TextStyle(fontSize: 14)),
-                    SizedBox(width: 6),
+                    const Text("Stories", style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: DefaultColors.danger,
-                        borderRadius: BorderRadius.all(Radius.circular(3)),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(3),
+                        ),
                       ),
-                      child: Text("WIP", style: TextStyle(fontSize: 11)),
+                      child: const Text("WIP", style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),

@@ -135,15 +135,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final imageProvider = AssetImage(
       "assets/images/poster/${activeUniverse!["Thumbnail"]}",
     );
-
     final palette = await PaletteGenerator.fromImageProvider(
       imageProvider,
       size: const Size(200, 100),
     );
-
     final dominantColor = palette.dominantColor?.color ?? Colors.black;
     final brightness = dominantColor.computeLuminance();
-
     if (mounted) {
       setState(() {
         menuIconColor = brightness < 0.5 ? Colors.white : Colors.black;
@@ -212,10 +209,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return SideMenu(
       key: _sideMenuKey,
-      menu: ASide("", context),
       background: DefaultColors.dark,
       type: SideMenuType.shrinkNSlide,
-      onChange: (opened) => setState(() => isOpened = opened),
+      menu: ASide(
+        "",
+        context,
+        onStopAudio: () async => _audioPlayer.stop(), // ✅ stoppe la musique
+        closeMenu: () =>
+            _sideMenuKey.currentState?.closeSideMenu(), // ✅ ferme le menu
+      ),
       child: IgnorePointer(
         ignoring: isOpened,
         child: Scaffold(
