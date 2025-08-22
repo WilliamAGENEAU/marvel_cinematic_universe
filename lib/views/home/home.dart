@@ -7,9 +7,10 @@ import 'package:fluttericon/mfg_labs_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:marvel_cinematic_universe/controller/universeController.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
+import 'package:marvel_cinematic_universe/views/home/timeline.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shrink_sidemenu/shrink_sidemenu.dart';
-import 'package:timeline_tile/timeline_tile.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../shared/aside.dart';
@@ -21,66 +22,96 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  // Video & Audio
   late YoutubePlayerController _ytbPlayerController;
-  late AudioPlayer _audioPlayer; // 🎵 ajout player
+  late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
   bool _isPaused = false;
 
+  // Data
   List<Map<String, dynamic>> universe = [];
   Map<String, dynamic>? activeUniverse;
+
+  // UI states
   Color menuIconColor = Colors.white;
-
-  double l = 0, r = 0, t = 0, b = 0;
-  var c = CrossAxisAlignment.start;
-  var m = MainAxisAlignment.start;
-
-  bool isMuted = false; // 🎵 état mute
   bool isOpened = false;
+  final bool _isHorizontal = true; // Toggle direction
   final GlobalKey<SideMenuState> _sideMenuKey = GlobalKey<SideMenuState>();
+
+  // Persist "seen"
+  Set<int> _seenIds = {};
+
+  ImageProvider? _posterProvider; // current
+  ImageProvider? _nextPosterProvider; // preloaded
 
   @override
   void initState() {
     super.initState();
-    _audioPlayer = AudioPlayer(); // 🎵 init
+    _audioPlayer = AudioPlayer();
     _initData();
+    _loadSeen();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Après que le context est prêt, on peut précacher l’image actuelle
     if (activeUniverse != null) {
-      // ✅ on peut utiliser precacheImage ici car le context est dispo
-      precacheImage(
-        AssetImage("assets/images/poster/${activeUniverse!["Thumbnail"]}"),
-        context,
-      );
+      _precachePoster(activeUniverse!["Thumbnail"]);
+      _updateMenuIconColor();
     }
-    updateTitlePlacement();
-    _updateMenuIconColor(); // Ajouté ici
   }
 
   Future<void> _initData() async {
     universe = universeMock;
+
     if (universe.isNotEmpty) {
-      setState(() {
-        activeUniverse = universe.first;
-      });
-      // 🎵 jouer musique du 1er film
-      _playMusic(activeUniverse!["music"]);
+      activeUniverse = universe.first;
+      _posterProvider = AssetImage(
+        "assets/images/poster/${activeUniverse!["Thumbnail"]}",
+      );
+      _playMusic(activeUniverse!["music"]); // joue la musique du 1er film
+
       _ytbPlayerController = YoutubePlayerController(
         initialVideoId: activeUniverse!['YoutubeId'],
         flags: const YoutubePlayerFlags(autoPlay: false, mute: false),
       );
+      setState(() {});
     }
   }
 
+  Future<void> _loadSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('seen_ids') ?? [];
+    setState(() {
+      _seenIds = list.map(int.parse).toSet();
+    });
+  }
+
+  Future<void> _saveSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'seen_ids',
+      _seenIds.map((e) => e.toString()).toList(),
+    );
+  }
+
+  void _toggleSeen(int id) {
+    setState(() {
+      if (_seenIds.contains(id)) {
+        _seenIds.remove(id);
+      } else {
+        _seenIds.add(id);
+      }
+    });
+    _saveSeen();
+  }
+
+  // ========= Audio =========
   Future<void> _playMusic(String fileName) async {
-    // ⚡️ si une musique est déjà en cours on arrête avant
     await _audioPlayer.stop();
-
     await _audioPlayer.play(AssetSource("musics/$fileName"));
-
     setState(() {
       _isPlaying = true;
       _isPaused = false;
@@ -89,34 +120,70 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _togglePlayPause() async {
     if (_isPlaying && !_isPaused) {
-      // 🔇 mettre en pause
       await _audioPlayer.pause();
-      setState(() {
-        _isPaused = true;
-      });
+      setState(() => _isPaused = true);
     } else if (_isPlaying && _isPaused) {
-      // 🔊 reprendre là où on a arrêté
       await _audioPlayer.resume();
+      setState(() => _isPaused = false);
+    }
+  }
+
+  // ========= Menu Contrast =========
+  Future<void> _updateMenuIconColor() async {
+    if (activeUniverse == null) return;
+
+    final imageProvider = AssetImage(
+      "assets/images/poster/${activeUniverse!["Thumbnail"]}",
+    );
+
+    final palette = await PaletteGenerator.fromImageProvider(
+      imageProvider,
+      size: const Size(200, 100),
+    );
+
+    final dominantColor = palette.dominantColor?.color ?? Colors.black;
+    final brightness = dominantColor.computeLuminance();
+
+    if (mounted) {
       setState(() {
-        _isPaused = false;
+        menuIconColor = brightness < 0.5 ? Colors.white : Colors.black;
       });
     }
   }
 
-  Future<void> _updateMenuIconColor() async {
-    if (activeUniverse == null) return;
-    final imageProvider = AssetImage(
-      "assets/images/poster/" + activeUniverse!["Thumbnail"],
-    );
-    final paletteGenerator = await PaletteGenerator.fromImageProvider(
-      imageProvider,
-      size: const Size(200, 100), // taille réduite pour performance
-    );
-    final dominantColor = paletteGenerator.dominantColor?.color ?? Colors.black;
-    final brightness = dominantColor.computeLuminance();
-    setState(() {
-      menuIconColor = brightness < 0.5 ? Colors.white : Colors.black;
-    });
+  // ========= Poster Precache & Swap =========
+  Future<void> _precachePoster(String thumbnail) async {
+    final provider = AssetImage("assets/images/poster/$thumbnail");
+    await precacheImage(provider, context);
+    _nextPosterProvider = provider;
+
+    // swap sans flash via AnimatedSwitcher + FadeIn/Gapless
+    if (mounted) {
+      setState(() {
+        _posterProvider = _nextPosterProvider;
+        _nextPosterProvider = null;
+      });
+    }
+  }
+
+  // ========= Timeline helpers =========
+  Color _phaseColor(String? phase) {
+    switch (phase) {
+      case "Phase 1":
+        return Colors.red;
+      case "Phase 2":
+        return Colors.blue;
+      case "Phase 3":
+        return Colors.green;
+      case "Phase 4":
+        return Colors.yellow;
+      case "Phase 5":
+        return Colors.orange;
+      case "Phase 6":
+        return Colors.purple;
+      default:
+        return DefaultColors.primary;
+    }
   }
 
   void toggleMenu() {
@@ -128,261 +195,211 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _precachePoster(String thumbnail) async {
-    await precacheImage(AssetImage("assets/images/poster/$thumbnail"), context);
-  }
-
   @override
   void dispose() {
     _ytbPlayerController.dispose();
-    _audioPlayer.dispose(); // 🎵 libère player
+    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (activeUniverse == null) {
+    if (activeUniverse == null || _posterProvider == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    final bg = _posterProvider!;
 
     return SideMenu(
       key: _sideMenuKey,
       menu: ASide("", context),
       background: DefaultColors.dark,
       type: SideMenuType.shrinkNSlide,
-      onChange: (opened) {
-        setState(() => isOpened = opened);
-      },
+      onChange: (opened) => setState(() => isOpened = opened),
       child: IgnorePointer(
         ignoring: isOpened,
         child: Scaffold(
+          backgroundColor: Colors.black,
           body: SafeArea(
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                    "assets/images/poster/" + activeUniverse!["Thumbnail"],
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Column(
-                children: [
-                  AppBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    leading: IconButton(
-                      icon: Icon(MfgLabs.menu, color: menuIconColor),
-                      onPressed: () => toggleMenu(),
-                    ),
-                    title: Container(
-                      alignment: Alignment.center,
-                      child: Image.asset(
-                        ImgPaths.logo_marvel_universe,
-                        width: 120,
-                      ),
-                    ),
-                  ),
-                  Expanded(
+            child: Stack(
+              children: [
+                // Background poster + subtle gradient overlay
+                Positioned.fill(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
                     child: Container(
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.topRight,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            activeUniverse!["MoviewName"],
-                            style: GoogleFonts.anton(
-                              fontSize: 26, // ⬅️ réduit (avant 32)
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            activeUniverse!["ReleaseDate"],
-                            style: GoogleFonts.openSans(
-                              fontSize: 18, // ⬅️ augmenté (avant 16)
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            activeUniverse!["RunTime"],
-                            style: GoogleFonts.openSans(
-                              fontSize: 17, // ⬅️ augmenté (avant 15)
-                              color: Colors.white70,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(color: Colors.white, width: 45, height: 4),
-                          const SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                padding: const EdgeInsets.only(left: 2),
-                                child: IconButton(
-                                  onPressed: showVideo,
-                                  icon: const Icon(
-                                    FontAwesome5.play,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Bande-annonce",
-                                style: GoogleFonts.openSans(
-                                  fontSize: 15, // ⬅️ augmenté (avant 13)
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              // 🎵 Bouton mute/unmute
-                              IconButton(
-                                onPressed: _togglePlayPause,
-                                icon: Icon(
-                                  _isPaused
-                                      ? Icons.volume_off
-                                      : Icons.volume_up,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      key: ValueKey(bg),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(image: bg, fit: BoxFit.cover),
+                      ),
+                      foregroundDecoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black54,
+                            Colors.black54,
+                            Colors.black87,
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 46),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 👉 Ici, on affiche la phase active
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: Pad.md,
-                                    bottom: Pad.sm,
-                                  ),
-                                  child: Text(
-                                    activeUniverse!["Phase"], // ⚡️ titre dynamique
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
+                ),
+
+                // Content
+                Column(
+                  children: [
+                    // Top AppBar
+                    AppBar(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      leading: IconButton(
+                        icon: Icon(MfgLabs.menu, color: menuIconColor),
+                        onPressed: () => toggleMenu(),
+                      ),
+                      title: Container(
+                        alignment: Alignment.center,
+                        child: Image.asset(
+                          ImgPaths.logo_marvel_universe,
+                          width: 120,
+                        ),
+                      ),
+                    ),
+
+                    // Info top-right
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.topRight,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 420),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Title
+                              Text(
+                                activeUniverse!["MoviewName"],
+                                textAlign: TextAlign.right,
+                                style: GoogleFonts.anton(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              // Release date & runtime (plus grands)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    activeUniverse!["ReleaseDate"],
+                                    style: GoogleFonts.openSans(
+                                      fontSize: 18,
                                       color: Colors.white,
                                     ),
                                   ),
-                                ),
-                                SizedBox(
-                                  height: 160,
-                                  child: ListView.builder(
-                                    itemCount: universe.length,
-                                    shrinkWrap: true,
-                                    scrollDirection: Axis.horizontal,
-                                    itemBuilder: (BuildContext context, int i) {
-                                      final index = universe.indexWhere(
-                                        (element) =>
-                                            element["id"] ==
-                                            activeUniverse!["id"],
-                                      );
-
-                                      // ⚡️ Définir couleur selon phase
-                                      Color phaseColor;
-                                      switch (universe[i]["Phase"]) {
-                                        case "Phase 1":
-                                          phaseColor = Colors.red;
-                                          break;
-                                        case "Phase 2":
-                                          phaseColor = Colors.blue;
-                                          break;
-                                        case "Phase 3":
-                                          phaseColor = Colors.green;
-                                          break;
-                                        case "Phase 4":
-                                          phaseColor = Colors.yellow;
-                                          break;
-                                        case "Phase 5":
-                                          phaseColor = Colors.orange;
-                                          break;
-                                        case "Phase 6":
-                                          phaseColor = Colors.purple;
-                                          break;
-                                        default:
-                                          phaseColor =
-                                              DefaultColors.primary; // fallback
-                                      }
-
-                                      return TimelineTile(
-                                        axis: TimelineAxis.horizontal,
-                                        alignment: TimelineAlign.manual,
-                                        lineXY: 0.9,
-                                        startChild: GestureDetector(
-                                          onTap: () async {
-                                            final newUniverse = universe[i];
-                                            await _precachePoster(
-                                              newUniverse["Thumbnail"],
-                                            );
-                                            setState(
-                                              () =>
-                                                  activeUniverse = newUniverse,
-                                            );
-                                            _playMusic(
-                                              activeUniverse!["music"],
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.only(
-                                              bottom: Pad.sm,
-                                            ),
-                                            child: Image.asset(
-                                              'assets/images/thumbnail/' +
-                                                  universe[i]["Thumbnail"],
-                                            ),
-                                          ),
-                                        ),
-                                        indicatorStyle: IndicatorStyle(
-                                          width: 16, // ⬅️ augmenté (avant 14)
-                                          height: 16, // ⬅️ augmenté (avant 14)
-                                          color: phaseColor,
-                                        ),
-                                        beforeLineStyle: LineStyle(
-                                          color: index >= i
-                                              ? phaseColor
-                                              : DefaultColors.baby_white
-                                                    .withOpacity(0.8),
-                                          thickness: 3, // ⬅️ épaissi (avant 1)
-                                        ),
-                                      );
-                                    },
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    "•",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    activeUniverse!["RunTime"],
+                                    style: GoogleFonts.openSans(
+                                      fontSize: 17,
+                                      color: Colors.white70,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              // Divider deco
+                              Container(
+                                color: Colors.white,
+                                width: 48,
+                                height: 4,
+                              ),
+                              const SizedBox(height: 14),
+
+                              // Actions : Play trailer + Bande-annonce + Audio toggle
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  // Trailer button (rounded)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white70),
+                                      borderRadius: BorderRadius.circular(50),
+                                      color: Colors.white.withOpacity(0.08),
+                                    ),
+                                    child: IconButton(
+                                      onPressed: showVideo,
+                                      icon: const Icon(
+                                        FontAwesome5.play,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Bande-annonce",
+                                    style: GoogleFonts.openSans(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Pause/Resume Audio
+                                  IconButton(
+                                    tooltip: _isPaused
+                                        ? 'Reprendre le son'
+                                        : 'Mettre en pause',
+                                    onPressed: _togglePlayPause,
+                                    icon: Icon(
+                                      _isPaused
+                                          ? Icons.volume_off
+                                          : Icons.volume_up,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                    // Timeline area
+                    TimelineSection(
+                      universe: universe,
+                      activeId: activeUniverse!["id"] as int,
+                      isHorizontal: _isHorizontal,
+                      seenIds: _seenIds,
+                      phaseColorFor: _phaseColor,
+                      onTapMovie: (movie) async {
+                        // Preload, then swap & play music
+                        await _precachePoster(movie["Thumbnail"]);
+                        setState(() => activeUniverse = movie);
+                        _updateMenuIconColor();
+                        _playMusic(activeUniverse!["music"]);
+                      },
+                      onToggleSeen: _toggleSeen,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -390,32 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void updateTitlePlacement() {
-    if (activeUniverse == null) return;
-
-    var size = MediaQuery.of(context).size;
-
-    setState(() {
-      switch (activeUniverse!["DataPlacement"]) {
-        case 'top-left':
-          l = size.width * 0.3;
-          r = Pad.md;
-          t = 24;
-          b = 0;
-          c = CrossAxisAlignment.end;
-          m = MainAxisAlignment.start;
-          break;
-        default: // top-right
-          l = size.width * 0.3;
-          r = Pad.md;
-          t = 24;
-          b = 0;
-          c = CrossAxisAlignment.end;
-          m = MainAxisAlignment.start;
-          break;
-      }
-    });
-  }
+  // (L’ancienne updateTitlePlacement n’est plus nécessaire car l’UI est fixe en haut-droite)
 
   showVideo() async {
     setState(() {
@@ -429,6 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.black,
           contentPadding: const EdgeInsets.all(4),
           content: AspectRatio(
             aspectRatio: 16 / 9,
@@ -436,6 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _ytbPlayerController,
               showVideoProgressIndicator: true,
               liveUIColor: DefaultColors.primary,
+              progressIndicatorColor: DefaultColors.primary,
             ),
           ),
         );
