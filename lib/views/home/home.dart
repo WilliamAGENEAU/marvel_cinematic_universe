@@ -24,6 +24,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late YoutubePlayerController _ytbPlayerController;
   late AudioPlayer _audioPlayer; // 🎵 ajout player
+  bool _isPlaying = false;
+  bool _isPaused = false;
 
   List<Map<String, dynamic>> universe = [];
   Map<String, dynamic>? activeUniverse;
@@ -47,14 +49,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (activeUniverse != null) {
+      // ✅ on peut utiliser precacheImage ici car le context est dispo
+      precacheImage(
+        AssetImage("assets/images/poster/${activeUniverse!["Thumbnail"]}"),
+        context,
+      );
+    }
     updateTitlePlacement();
     _updateMenuIconColor(); // Ajouté ici
   }
 
   Future<void> _initData() async {
-    // Liste locale
     universe = universeMock;
-
     if (universe.isNotEmpty) {
       setState(() {
         activeUniverse = universe.first;
@@ -68,45 +75,45 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 🎵 fonction jouer musique
-  Future<void> _playMusic(String filename) async {
-    await _audioPlayer.stop(); // stop musique précédente
-    if (!isMuted) {
-      await _audioPlayer.play(AssetSource("musics/$filename"));
-      // ⚠️ mets tes fichiers dans assets/musics/
-    }
+  Future<void> _playMusic(String fileName) async {
+    // ⚡️ si une musique est déjà en cours on arrête avant
+    await _audioPlayer.stop();
+
+    await _audioPlayer.play(AssetSource("musics/$fileName"));
+
+    setState(() {
+      _isPlaying = true;
+      _isPaused = false;
+    });
   }
 
-  // 🎵 toggle mute
-  void _toggleMute() {
-    setState(() {
-      isMuted = !isMuted;
-    });
-    if (isMuted) {
-      _audioPlayer.pause();
-    } else {
-      _playMusic(activeUniverse!["music"]);
+  Future<void> _togglePlayPause() async {
+    if (_isPlaying && !_isPaused) {
+      // 🔇 mettre en pause
+      await _audioPlayer.pause();
+      setState(() {
+        _isPaused = true;
+      });
+    } else if (_isPlaying && _isPaused) {
+      // 🔊 reprendre là où on a arrêté
+      await _audioPlayer.resume();
+      setState(() {
+        _isPaused = false;
+      });
     }
   }
 
   Future<void> _updateMenuIconColor() async {
     if (activeUniverse == null) return;
-
     final imageProvider = AssetImage(
       "assets/images/poster/" + activeUniverse!["Thumbnail"],
     );
-
     final paletteGenerator = await PaletteGenerator.fromImageProvider(
       imageProvider,
       size: const Size(200, 100), // taille réduite pour performance
     );
-
-    // Couleur dominante
     final dominantColor = paletteGenerator.dominantColor?.color ?? Colors.black;
-
-    // On calcule la luminosité (0 = sombre, 1 = clair)
     final brightness = dominantColor.computeLuminance();
-
     setState(() {
       menuIconColor = brightness < 0.5 ? Colors.white : Colors.black;
     });
@@ -119,6 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       state.openSideMenu();
     }
+  }
+
+  Future<void> _precachePoster(String thumbnail) async {
+    await precacheImage(AssetImage("assets/images/poster/$thumbnail"), context);
   }
 
   @override
@@ -238,9 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 12),
                               // 🎵 Bouton mute/unmute
                               IconButton(
-                                onPressed: _toggleMute,
+                                onPressed: _togglePlayPause,
                                 icon: Icon(
-                                  isMuted ? Icons.volume_off : Icons.volume_up,
+                                  _isPaused
+                                      ? Icons.volume_off
+                                      : Icons.volume_up,
                                   color: Colors.white,
                                   size: 24,
                                 ),
@@ -322,15 +335,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         alignment: TimelineAlign.manual,
                                         lineXY: 0.9,
                                         startChild: GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              activeUniverse = universe[i];
-                                            });
+                                          onTap: () async {
+                                            final newUniverse = universe[i];
+                                            await _precachePoster(
+                                              newUniverse["Thumbnail"],
+                                            );
+                                            setState(
+                                              () =>
+                                                  activeUniverse = newUniverse,
+                                            );
                                             _playMusic(
                                               activeUniverse!["music"],
                                             );
-                                            updateTitlePlacement();
-                                            _updateMenuIconColor(); // ⚡️ recheck contraste menu
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.only(
