@@ -22,7 +22,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // Video & Audio
   late YoutubePlayerController _ytbPlayerController;
   late AudioPlayer _audioPlayer;
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // ✅ on s'abonne aux événements
     _audioPlayer = AudioPlayer();
     _initData();
     _loadSeen();
@@ -194,9 +196,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // ✅ on se désabonne
     _ytbPlayerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  // ✅ écoute les changements de cycle de vie
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      // quand on verrouille ou quitte l’app → stop musique
+      _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+        _isPaused = false;
+      });
+    }
   }
 
   @override
@@ -263,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         onPressed: () => toggleMenu(),
                       ),
                       title: Container(
+                        padding: const EdgeInsets.only(left: 4),
                         alignment: Alignment.center,
                         child: Image.asset(
                           ImgPaths.logo_marvel_universe,

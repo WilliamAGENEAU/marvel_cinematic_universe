@@ -51,24 +51,24 @@ class _TimelineSectionState extends State<TimelineSection> {
     if (index == -1) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final screenWidth = MediaQuery.of(context).size.width;
-      final itemWidth = (screenWidth - 64) / 4; // 4 visibles
-      final targetOffset = (index * (itemWidth + 10)) - 12;
+      if (!_scrollController.hasClients) return;
 
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          targetOffset.clamp(0, _scrollController.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
-        );
-      }
+      final screenWidth = MediaQuery.of(context).size.width;
+      final itemWidth = (screenWidth - 64) / 4; // largeur estimée
+      final targetOffset =
+          (index * (itemWidth + 10)) - (screenWidth / 2 - itemWidth / 2);
+
+      _scrollController.animateTo(
+        targetOffset.clamp(0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
     });
   }
 
   void _onPhaseChanged(String phase) {
     setState(() => selectedPhase = phase);
 
-    // chercher le premier film de la phase
     final movie = widget.universe.firstWhere(
       (m) => m["Phase"] == phase,
       orElse: () => {},
@@ -208,21 +208,41 @@ class _TimelineSectionState extends State<TimelineSection> {
                     ),
                   ),
                   indicatorStyle: IndicatorStyle(
-                    width: 18,
-                    height: 18,
-                    color: phaseColor,
-                    indicatorXY: 1.0,
+                    width: isActive ? 34 : 28, // ✅ plus gros pour actif
+                    height: isActive ? 34 : 28,
+                    indicator: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: i <= index
+                            ? phaseColor
+                            : Colors.grey, // ✅ gris si après
+                        border: Border.all(
+                          color: Colors.white,
+                          width: isActive ? 2.5 : 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          movie["id"].toString(),
+                          style: TextStyle(
+                            fontSize: isActive ? 13 : 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   beforeLineStyle: LineStyle(
-                    color: index >= i
+                    color: i <= index
                         ? phaseColor
-                        : Colors.white.withOpacity(0.65),
+                        : Colors.grey, // ✅ avant = couleur, après = gris
                     thickness: 3,
                   ),
                   afterLineStyle: LineStyle(
-                    color: index <= i
+                    color: i < index
                         ? phaseColor
-                        : Colors.white.withOpacity(0.65),
+                        : Colors.grey, // ✅ après sélectionné = gris
                     thickness: 3,
                   ),
                 ),
