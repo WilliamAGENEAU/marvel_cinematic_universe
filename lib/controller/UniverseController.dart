@@ -491,10 +491,10 @@ List<Map<String, dynamic>> universeMock = [
     "Phase": "Phase 5",
     "Saga": "Saga du multivers",
     "RunTime": "1 saison",
-    "Thumbnail": "dardevil.jpg",
+    "Thumbnail": "dardevill.jpg",
     "YoutubeId": "mdEqcqglkDE",
     "ReleaseDate": "2025",
-    "music": "dardevil.mp3",
+    "music": "dardevill.mp3",
   },
   {
     "id": 45,

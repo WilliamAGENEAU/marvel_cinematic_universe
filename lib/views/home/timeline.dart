@@ -38,6 +38,8 @@ class _TimelineSectionState extends State<TimelineSection> {
     "Saga du multivers": ["Phase 4", "Phase 5", "Phase 6"],
   };
 
+  GlobalKey? _activeItemKey; // ✅ une seule clé pour l’item actif
+
   @override
   void didUpdateWidget(covariant TimelineSection oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -47,27 +49,24 @@ class _TimelineSectionState extends State<TimelineSection> {
   }
 
   void _scrollToActive(int activeId) {
-    final index = widget.universe.indexWhere((m) => m["id"] == activeId);
-    if (index == -1) return;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-
-      final screenWidth = MediaQuery.of(context).size.width;
-      final itemWidth = (screenWidth - 64) / 4; // largeur estimée
-      final targetOffset =
-          (index * (itemWidth + 10)) - (screenWidth / 2 - itemWidth / 2);
-
-      _scrollController.animateTo(
-        targetOffset.clamp(0, _scrollController.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeInOutCubic,
-      );
+      final ctx = _activeItemKey?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+          alignment: 0.5,
+        );
+      }
     });
   }
 
   void _onPhaseChanged(String phase) {
-    setState(() => selectedPhase = phase);
+    setState(() {
+      selectedPhase = phase;
+      _activeItemKey = null; // reset clé
+    });
 
     final movie = widget.universe.firstWhere(
       (m) => m["Phase"] == phase,
@@ -105,6 +104,7 @@ class _TimelineSectionState extends State<TimelineSection> {
                     setState(() {
                       selectedSaga = val;
                       selectedPhase = sagas[val]!.first;
+                      _activeItemKey = null;
                     });
                     _onPhaseChanged(selectedPhase);
                   }
@@ -141,109 +141,117 @@ class _TimelineSectionState extends State<TimelineSection> {
               final phaseColor = widget.phaseColorFor(movie["Phase"]);
               final seen = widget.seenIds.contains(movie["id"]);
 
-              final thumb = ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: ColorFiltered(
-                  colorFilter: seen
-                      ? const ColorFilter.mode(
-                          Colors.grey,
-                          BlendMode.saturation,
-                        )
-                      : const ColorFilter.mode(
-                          Colors.transparent,
-                          BlendMode.dst,
-                        ),
-                  child: Image.asset(
-                    'assets/images/thumbnail/${movie["Thumbnail"]}',
-                    height: itemHeight,
-                    width: itemWidth,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
+              // ✅ clé unique si actif
+              final itemKey = isActive ? GlobalKey() : ValueKey(movie["id"]);
+              if (isActive) _activeItemKey = itemKey as GlobalKey;
+
+              // Miniature + bouton vu
+              final thumb = Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: ColorFiltered(
+                      colorFilter: seen
+                          ? const ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.saturation,
+                            )
+                          : const ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.dst,
+                            ),
+                      child: Image.asset(
+                        'assets/images/thumbnail/${movie["Thumbnail"]}',
+                        height: itemHeight,
+                        width: itemWidth,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: InkWell(
+                      onTap: () => widget.onToggleSeen(movie["id"] as int),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Icon(
+                          seen
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          size: 20,
+                          color: seen ? Colors.greenAccent : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
 
-              return Padding(
-                padding: EdgeInsets.only(right: widget.isHorizontal ? 10 : 0),
-                child: TimelineTile(
-                  axis: widget.isHorizontal
-                      ? TimelineAxis.horizontal
-                      : TimelineAxis.vertical,
-                  alignment: TimelineAlign.manual,
-                  lineXY: 1.0,
-                  startChild: GestureDetector(
-                    onTap: () => widget.onTapMovie(movie),
-                    child: Stack(
-                      children: [
-                        AnimatedScale(
-                          duration: const Duration(milliseconds: 250),
-                          scale: isActive ? 1.08 : 1.0,
-                          curve: Curves.easeOutBack,
-                          child: thumb,
+              return Container(
+                key: ValueKey(movie["id"]),
+                child: Padding(
+                  padding: EdgeInsets.only(right: widget.isHorizontal ? 10 : 0),
+                  child: TimelineTile(
+                    axis: widget.isHorizontal
+                        ? TimelineAxis.horizontal
+                        : TimelineAxis.vertical,
+                    alignment: TimelineAlign.manual,
+                    lineXY: 1.0,
+                    startChild: GestureDetector(
+                      onTap: () => widget.onTapMovie(movie),
+                      child: Column(
+                        children: [
+                          Container(
+                            key: itemKey,
+                            child: AnimatedScale(
+                              duration: const Duration(milliseconds: 250),
+                              scale: isActive ? 1.08 : 1.0,
+                              curve: Curves.easeOutBack,
+                              child: thumb,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    indicatorStyle: IndicatorStyle(
+                      width: isActive ? 34 : 28,
+                      height: isActive ? 34 : 28,
+                      indicator: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i <= index ? phaseColor : Colors.grey,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: isActive ? 2.5 : 1.5,
+                          ),
                         ),
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: InkWell(
-                            onTap: () =>
-                                widget.onToggleSeen(movie["id"] as int),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Icon(
-                                seen
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                size: 20,
-                                color: seen ? Colors.greenAccent : Colors.white,
-                              ),
+                        child: Center(
+                          child: Text(
+                            movie["id"].toString(),
+                            style: TextStyle(
+                              fontSize: isActive ? 13 : 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  indicatorStyle: IndicatorStyle(
-                    width: isActive ? 34 : 28, // ✅ plus gros pour actif
-                    height: isActive ? 34 : 28,
-                    indicator: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i <= index
-                            ? phaseColor
-                            : Colors.grey, // ✅ gris si après
-                        border: Border.all(
-                          color: Colors.white,
-                          width: isActive ? 2.5 : 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          movie["id"].toString(),
-                          style: TextStyle(
-                            fontSize: isActive ? 13 : 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
                       ),
                     ),
-                  ),
-                  beforeLineStyle: LineStyle(
-                    color: i <= index
-                        ? phaseColor
-                        : Colors.grey, // ✅ avant = couleur, après = gris
-                    thickness: 3,
-                  ),
-                  afterLineStyle: LineStyle(
-                    color: i < index
-                        ? phaseColor
-                        : Colors.grey, // ✅ après sélectionné = gris
-                    thickness: 3,
+                    beforeLineStyle: LineStyle(
+                      color: i <= index ? phaseColor : Colors.grey,
+                      thickness: 3,
+                    ),
+                    afterLineStyle: LineStyle(
+                      color: i < index ? phaseColor : Colors.grey,
+                      thickness: 3,
+                    ),
                   ),
                 ),
               );
@@ -254,7 +262,7 @@ class _TimelineSectionState extends State<TimelineSection> {
     );
   }
 
-  /// 🔽 Widget moderne pour dropdown
+  /// 🔽 Dropdown stylisé
   Widget _buildDropdown({
     required String value,
     required List<String> items,
