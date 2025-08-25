@@ -19,9 +19,9 @@
 ## 🖼️ Aperçu
 
 <p align="center">
-  <img src="assets/readme/screen-home.png" width="30%" />
-  <img src="assets/readme/screen-timeline.png" width="30%" />
-  <img src="assets/readme/screen-tierlist.png" width="30%" />
+  <img src="assets/readme/screen-home.jpg" width="30%" />
+  <img src="assets/readme/screen-timeline.jpg" width="30%" />
+  <img src="assets/readme/screen-tierlist.jpg" width="30%" />
 </p>
 
 ---
