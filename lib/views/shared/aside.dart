@@ -5,6 +5,7 @@ import 'package:marvel_cinematic_universe/controller/universeController.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
 import 'package:marvel_cinematic_universe/helpers/utilities.dart';
 import 'package:marvel_cinematic_universe/views/home/tierlist_page.dart';
+import 'package:marvel_cinematic_universe/views/quiz/quiz_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// ASide maintenant accepte:
@@ -40,6 +41,13 @@ Widget ASide(
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => TierListPage(seenMovies: seenMovies)),
+    );
+  }
+
+  Future<void> openQuiz() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => QuizPage()),
     );
   }
 
@@ -95,9 +103,7 @@ Widget ASide(
                 dense: true,
               ),
               ListTile(
-                onTap: () {
-                  ShowToast('Comics screen is work in progress.');
-                },
+                onTap: openQuiz,
                 leading: Icon(
                   FontAwesome5.book,
                   size: 20.0,
@@ -105,18 +111,8 @@ Widget ASide(
                 ),
                 title: Row(
                   children: [
-                    const Text("Comics", style: TextStyle(fontSize: 14)),
+                    const Text("Quiz", style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: DefaultColors.danger,
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(3),
-                        ),
-                      ),
-                      child: const Text("WIP", style: TextStyle(fontSize: 11)),
-                    ),
                   ],
                 ),
                 textColor: DefaultColors.baby_white,
