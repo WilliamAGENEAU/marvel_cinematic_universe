@@ -103,15 +103,19 @@ class _TimelineSectionState extends State<TimelineSection> {
   void initState() {
     super.initState();
 
-    final immanquable = Niveau("immanquable", "Immanquable", Colors.redAccent);
+    final immanquable = Niveau(
+      "immanquable 🔴",
+      "Immanquable",
+      Colors.redAccent,
+    );
 
     niveauItems = [
       DropdownItem(
-        label: "Intéressant",
+        label: "Intéressant 🟠",
         value: Niveau("interessant", "Intéressant", Colors.orangeAccent),
       ),
       DropdownItem(
-        label: "Optionnel",
+        label: "Optionnel 🟢",
         value: Niveau("optionnel", "Optionnel", Colors.blueAccent),
       ),
     ];

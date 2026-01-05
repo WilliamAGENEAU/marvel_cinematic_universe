@@ -204,6 +204,11 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  double get _watchProgress {
+    if (universe.isEmpty) return 0;
+    return (_seenIds.length / universe.length) * 100;
+  }
+
   void toggleMenu() {
     final state = _sideMenuKey.currentState!;
     if (state.isOpened) {
@@ -308,6 +313,22 @@ class _HomeScreenState extends State<HomeScreen>
                           width: 120,
                         ),
                       ),
+                      actions: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: Center(
+                            child: Text(
+                              "${_watchProgress.toStringAsFixed(0)}% vues",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     // Info top-right
