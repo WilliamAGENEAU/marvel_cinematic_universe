@@ -188,9 +188,9 @@ class _TimelineSectionState extends State<TimelineSection> {
                   ),
 
                   fieldDecoration: FieldDecoration(
-                    hintText: 'Niveau',
+                    hintText: 'Filtres',
                     hintStyle: const TextStyle(
-                      color: Colors.white70,
+                      color: Colors.white,
                       fontSize: 13,
                     ),
                     showClearIcon: false,

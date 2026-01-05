@@ -459,6 +459,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2022",
     "music": "loki.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "La série se déroule majoritairement dans le TVA soit en dehors de l’espace-temps. Libération du multivers, la terre principale du MCU est désignée comme étant la numéro 616",
   },
   {
     "id": 39,
@@ -471,6 +473,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2021",
     "music": "wandaVision.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "3 semaines après Avengers: Endgame. La série introduit le concept du multivers dans le MCU avec la création d’une réalité alternative par Wanda Maximoff en deuil de Vision. Elle permet aussi de révéler que Agatha Harkness est une sorcière très puissante.",
   },
   {
     "id": 40,
@@ -495,6 +499,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2021",
     "music": "falcon.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "6 mois après Avengers: Endgame. La série suit Sam Wilson et Bucky Barnes après les événements d’Endgame. Elle aborde aussi la thématique du racisme à travers le personnage de Sam Wilson qui hérite du bouclier de Captain America.",
   },
   {
     "id": 42,
@@ -519,6 +525,7 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2021",
     "music": "eternals.mp3",
     "niveau": "immanquable",
+    "spoil": "Tiamut est mort-né ; le céleste gise en plein océan indien",
   },
   {
     "id": 44,
@@ -531,6 +538,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2019",
     "music": "spiderman2.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "9 mois après Avengers: Endgame. Peter Parker part en voyage scolaire en Europe. Il doit faire face à de nouvelles menaces, les Elementals, et à un nouveau héros, Mysterio. La fin du film révèle que Mysterio est en réalité un ancien employé de Stark Industries qui cherche à se venger de Tony Stark. L'identité de Peter Parker est également révélée au monde entier.",
   },
   {
     "id": 45,
@@ -567,6 +576,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2021",
     "music": "spiderman3.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "Apparition des Spider-Man de Tobey Maguire et d’Andrew Garfield. Venom fait un saut dans l’univers principal du MCU avant de retourner dans le sien.",
   },
   {
     "id": 48,
@@ -579,6 +590,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2022",
     "music": "doctor_strange_2.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "Stephen Strange rencontre plusieurs héros de l’univers 838. Ses actions et celles de Wanda Maximoff (les rêves-passerelles) causent plusieurs incursions dans le multivers.",
   },
   {
     "id": 49,
@@ -591,6 +604,7 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2021",
     "music": "hawkeye.mp3",
     "niveau": "interessant",
+    "spoil": "Quelques semaines après No Way Home",
   },
   {
     "id": 50,
@@ -615,6 +629,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2022",
     "music": "black_panther_wakanda_forever.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "Introduction de Namor et du royaume de Talokan. Shuri devient la nouvelle Black Panther.",
   },
   {
     "id": 52,
@@ -711,6 +727,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2023",
     "music": "ant_man_3.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "Première apparition d’un variant de Kang le Conquérant après la série Loki ",
   },
   {
     "id": 60,
@@ -723,6 +741,7 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2023  ",
     "music": "gardien_3.mp3",
     "niveau": "immanquable",
+    "spoil": "Fin de la première équipe des Gardiens de la Galaxie.",
   },
   {
     "id": 61,
@@ -747,6 +766,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2023",
     "music": "the_marvels.mp3",
     "niveau": "immanquable",
+    "spoil":
+        " Monica Rambeau empêche une incursion entre l’univers 616 et un autre non connu grâce à son énergie mais cette dernière reste coincée de l’autre côté et se retrouve parmi les X-Men (différents des films de la 20th Century Fox)",
   },
   {
     "id": 63,
@@ -759,6 +780,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2024",
     "music": "agatha.mp3",
     "niveau": "interessant",
+    "spoil":
+        "Première apparition du personnage de la Mort, et Wiccan, l’un des deux fils de Wanda Maximoff, décide de partir à la recherche de son frère.",
   },
   {
     "id": 64,
@@ -771,6 +794,7 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2025",
     "music": "dardevill.mp3",
     "niveau": "interessant",
+    "spoil": "Daredevil reprend du service et déclare la guerre au Kingpin",
   },
   {
     "id": 65,
@@ -795,6 +819,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2025",
     "music": "Thunderbolts.mp3",
     "niveau": "immanquable",
+    "spoil":
+        " Les Thunderbolts s’unissent pour sauver New York de The Void et deviennent les Nouveaux Avengers.",
   },
   {
     "id": 67,
@@ -819,6 +845,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2025",
     "music": "fantastique.mp3",
     "niveau": "immanquable",
+    "spoil":
+        "La famille de super-héros a réussi à déjouer les plans de Galactus et à sauver leur enfant Franklin. Ce dernier se fait enlever par le Docteur Fatalis dans la scène post-générique.",
   },
   {
     "id": 69,
@@ -855,6 +883,8 @@ List<Map<String, dynamic>> universeMock = [
     "ReleaseDate": "2024",
     "music": "deadpool.mp3",
     "niveau": "immanquable",
+    "spoil":
+        " Deadpool est capturé par le TVA et parcours le multivers grâce à leurs gadgets pour tenter de trouver un Wolverine qui veut bien l’aider dans sa quête. Ensemble, ils deviendront les « Anchor Being » de l’univers de Deadpool (la Terre-4147), soit des êtres essentiels à la survie de leur univers que l’on peut appeler « agglomérateur ».",
   },
   {
     "id": 72,

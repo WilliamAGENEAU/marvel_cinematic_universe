@@ -149,6 +149,47 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _showSpoilDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent),
+              SizedBox(width: 8),
+              Text("Spoiler", style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Text(
+              activeUniverse!["spoil"],
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "Fermer",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ========= Menu Contrast =========
   Future<void> _updateMenuIconColor() async {
     if (activeUniverse == null) return;
@@ -438,6 +479,37 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ],
                               ),
+                              // 🔥 Rubrique Spoil
+                              if (activeUniverse!["spoil"] != null &&
+                                  activeUniverse!["spoil"]
+                                      .toString()
+                                      .trim()
+                                      .isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 14),
+                                  child: GestureDetector(
+                                    onTap: _showSpoilDialog,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          "Spoil",
+                                          style: GoogleFonts.openSans(
+                                            fontSize: 15,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
