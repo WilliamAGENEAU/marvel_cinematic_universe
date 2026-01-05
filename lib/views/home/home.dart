@@ -111,13 +111,32 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ========= Audio =========
-  Future<void> _playMusic(String fileName) async {
-    await _audioPlayer.stop();
-    await _audioPlayer.play(AssetSource("musics/$fileName"));
-    setState(() {
-      _isPlaying = true;
-      _isPaused = false;
-    });
+  Future<void> _playMusic(String? fileName) async {
+    // 🔒 si pas de musique → on stop et on sort
+    if (fileName == null || fileName.trim().isEmpty) {
+      await _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+        _isPaused = false;
+      });
+      return;
+    }
+
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource("musics/$fileName"));
+
+      setState(() {
+        _isPlaying = true;
+        _isPaused = false;
+      });
+    } catch (e) {
+      debugPrint("❌ Erreur lecture audio : $e");
+      setState(() {
+        _isPlaying = false;
+        _isPaused = false;
+      });
+    }
   }
 
   Future<void> _togglePlayPause() async {

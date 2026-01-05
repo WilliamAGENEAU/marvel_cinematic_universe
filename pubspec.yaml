@@ -46,6 +46,7 @@ dependencies:
   liquid_progress_indicator_v2: ^0.5.0
   palette_generator: ^0.3.3+7
   audioplayers: ^6.5.0
+  multi_dropdown: ^3.0.1
 
 dev_dependencies:
   flutter_test:

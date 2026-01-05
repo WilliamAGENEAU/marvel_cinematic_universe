@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:marvel_cinematic_universe/helpers/niveau.dart';
 import 'package:timeline_tile/timeline_tile.dart';
+import 'package:multi_dropdown/multi_dropdown.dart';
 
 class TimelineSection extends StatefulWidget {
   const TimelineSection({
@@ -29,6 +31,18 @@ class TimelineSection extends StatefulWidget {
 
 class _TimelineSectionState extends State<TimelineSection> {
   final ScrollController _scrollController = ScrollController();
+  Color _niveauColor(String niveau) {
+    switch (niveau) {
+      case "immanquable":
+        return Colors.redAccent;
+      case "interessant":
+        return Colors.orangeAccent;
+      case "optionnel":
+        return Colors.greenAccent;
+      default:
+        return Colors.grey;
+    }
+  }
 
   String selectedSaga = "Saga de l'infini";
   String selectedPhase = "Phase 1";
@@ -37,6 +51,12 @@ class _TimelineSectionState extends State<TimelineSection> {
     "Saga de l'infini": ["Phase 1", "Phase 2", "Phase 3"],
     "Saga du multivers": ["Phase 4", "Phase 5", "Phase 6"],
   };
+  final MultiSelectController<Niveau> niveauController =
+      MultiSelectController<Niveau>();
+
+  late final List<DropdownItem<Niveau>> niveauItems;
+
+  Set<String> selectedNiveaux = {"immanquable"};
 
   GlobalKey? _activeItemKey; // ✅ une seule clé pour l’item actif
 
@@ -80,10 +100,39 @@ class _TimelineSectionState extends State<TimelineSection> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    final immanquable = Niveau("immanquable", "Immanquable", Colors.redAccent);
+
+    niveauItems = [
+      DropdownItem(
+        label: "Intéressant",
+        value: Niveau("interessant", "Intéressant", Colors.orangeAccent),
+      ),
+      DropdownItem(
+        label: "Optionnel",
+        value: Niveau("optionnel", "Optionnel", Colors.blueAccent),
+      ),
+    ];
+
+    // 🔒 Immanquable forcé MAIS invisible
+    niveauController.addItems([
+      DropdownItem(label: "Immanquable", value: immanquable),
+    ]);
+  }
+
+  bool _matchesNiveau(Map<String, dynamic> movie) {
+    return selectedNiveaux.contains(movie["niveau"]);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final list = widget.universe
         .where((m) => m["Phase"] == selectedPhase)
+        .where(_matchesNiveau)
         .toList();
+
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = (screenWidth - 64) / 4;
     final itemHeight = itemWidth * 16 / 9;
@@ -93,7 +142,7 @@ class _TimelineSectionState extends State<TimelineSection> {
       children: [
         // 🔽 Menus stylés
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
           child: Row(
             children: [
               _buildDropdown(
@@ -110,13 +159,68 @@ class _TimelineSectionState extends State<TimelineSection> {
                   }
                 },
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 6),
               _buildDropdown(
                 value: selectedPhase,
                 items: sagas[selectedSaga]!,
                 onChanged: (val) {
                   if (val != null) _onPhaseChanged(val);
                 },
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 190,
+                height: 42,
+                child: MultiDropdown<Niveau>(
+                  items: niveauItems,
+                  controller: niveauController,
+                  enabled: true,
+                  searchEnabled: false,
+
+                  chipDecoration: const ChipDecoration(
+                    backgroundColor: Colors.black,
+                    labelStyle: TextStyle(color: Colors.white),
+                    wrap: false,
+                  ),
+
+                  fieldDecoration: FieldDecoration(
+                    hintText: 'Niveau',
+                    hintStyle: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                    showClearIcon: false,
+                    backgroundColor: Colors.black,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.white24),
+                    ),
+                  ),
+
+                  dropdownDecoration: const DropdownDecoration(
+                    backgroundColor: Colors.black,
+                    maxHeight: 180,
+                  ),
+
+                  dropdownItemDecoration: DropdownItemDecoration(
+                    textColor: Colors.white,
+                    selectedIcon: const Icon(
+                      Icons.check_circle,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+
+                  // ✅ SIGNATURE CORRECTE
+                  onSelectionChange: (selectedItems) {
+                    setState(() {
+                      selectedNiveaux = {
+                        "immanquable", // 🔒 toujours présent
+                        ...selectedItems.map((e) => e.key),
+                      };
+                      _activeItemKey = null;
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -188,6 +292,26 @@ class _TimelineSectionState extends State<TimelineSection> {
                           size: 20,
                           color: seen ? Colors.greenAccent : Colors.white,
                         ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: _niveauColor(movie["niveau"]),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black87,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -267,30 +391,30 @@ class _TimelineSectionState extends State<TimelineSection> {
     required String value,
     required List<String> items,
     required void Function(String?) onChanged,
+    String Function(String)? labelBuilder,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+    return Container(
+      height: 42, // ✅ plus petit
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white24, width: 1),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
+          isDense: true, // ✅ compact
           dropdownColor: Colors.black87,
-          borderRadius: BorderRadius.circular(12),
-          style: const TextStyle(color: Colors.white, fontSize: 16),
           icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+          style: const TextStyle(color: Colors.white, fontSize: 13),
           items: items
               .map(
                 (item) => DropdownMenuItem(
                   value: item,
                   child: Text(
-                    item,
-                    style: const TextStyle(color: Colors.white),
+                    labelBuilder != null ? labelBuilder(item) : item,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               )
