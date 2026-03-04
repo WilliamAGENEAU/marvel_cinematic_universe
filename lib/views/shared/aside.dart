@@ -18,26 +18,21 @@ Widget ASide(
   VoidCallback? closeMenu,
 }) {
   Future<void> openTierlist() async {
-    // 1) fermer le menu s'il y a une callback
     closeMenu?.call();
 
-    // 2) couper l'audio s'il y a une callback
     if (onStopAudio != null) {
       await onStopAudio();
     }
 
-    // 3) récupérer les IDs vus depuis SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final seenIds = (prefs.getStringList('seen_ids') ?? [])
         .map(int.parse)
         .toSet();
 
-    // 4) construire la liste des films vus à partir de universeMock
     final seenMovies = universeMock
         .where((m) => seenIds.contains(m["id"] as int))
         .toList(growable: false);
 
-    // 5) naviguer vers la TierListPage en lui passant les films vus
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => TierListPage(seenMovies: seenMovies)),
@@ -92,7 +87,7 @@ Widget ASide(
                 dense: true,
               ),
               ListTile(
-                onTap: openTierlist, // ✅ ouvre la tierlist correctement
+                onTap: openTierlist,
                 leading: Icon(
                   FontAwesome5.list,
                   size: 20.0,

@@ -57,7 +57,6 @@ class _AppState extends State<App> {
       ),
       initialRoute: '/',
       routes: {'/': (context) => const HomeScreen()},
-      // 🚀 pour gérer les routes avec paramètres
       onGenerateRoute: (settings) {
         if (settings.name == '/tierlist') {
           final args = settings.arguments as List<Map<String, dynamic>>? ?? [];

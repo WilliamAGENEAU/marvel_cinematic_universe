@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
   // UI states
   Color menuIconColor = Colors.white;
   bool isOpened = false;
-  final bool _isHorizontal = true; // Toggle direction
+  final bool _isHorizontal = true;
   final GlobalKey<SideMenuState> _sideMenuKey = GlobalKey<SideMenuState>();
 
   // Persist "seen"
@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // ✅ on s'abonne aux événements
+    WidgetsBinding.instance.addObserver(this);
     _audioPlayer = AudioPlayer();
     _initData();
     _loadSeen();
@@ -58,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Après que le context est prêt, on peut précacher l’image actuelle
     if (activeUniverse != null) {
       _precachePoster(activeUniverse!["Thumbnail"]);
       _updateMenuIconColor();
@@ -71,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (universe.isNotEmpty) {
       activeUniverse = universe.first;
       _posterProvider = AssetImage(
-        "assets/images/poster/${activeUniverse!["Thumbnail"]}",
+        "assets/images/thumbnail/${activeUniverse!["Thumbnail"]}",
       );
       _playMusic(activeUniverse!["music"]); // joue la musique du 1er film
 
@@ -195,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (activeUniverse == null) return;
 
     final imageProvider = AssetImage(
-      "assets/images/poster/${activeUniverse!["Thumbnail"]}",
+      "assets/images/thumbnail/${activeUniverse!["Thumbnail"]}",
     );
     final palette = await PaletteGenerator.fromImageProvider(
       imageProvider,
@@ -212,11 +211,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ========= Poster Precache & Swap =========
   Future<void> _precachePoster(String thumbnail) async {
-    final provider = AssetImage("assets/images/poster/$thumbnail");
+    final provider = AssetImage("assets/images/thumbnail/$thumbnail");
     await precacheImage(provider, context);
     _nextPosterProvider = provider;
 
-    // swap sans flash via AnimatedSwitcher + FadeIn/Gapless
     if (mounted) {
       setState(() {
         _posterProvider = _nextPosterProvider;
@@ -261,20 +259,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // ✅ on se désabonne
+    WidgetsBinding.instance.removeObserver(this);
     _ytbPlayerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  // ✅ écoute les changements de cycle de vie
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      // quand on verrouille ou quitte l’app → stop musique
       _audioPlayer.stop();
       setState(() {
         _isPlaying = false;
@@ -298,9 +294,8 @@ class _HomeScreenState extends State<HomeScreen>
       menu: ASide(
         "",
         context,
-        onStopAudio: () async => _audioPlayer.stop(), // ✅ stoppe la musique
-        closeMenu: () =>
-            _sideMenuKey.currentState?.closeSideMenu(), // ✅ ferme le menu
+        onStopAudio: () async => _audioPlayer.stop(),
+        closeMenu: () => _sideMenuKey.currentState?.closeSideMenu(),
       ),
       child: IgnorePointer(
         ignoring: isOpened,
@@ -309,7 +304,6 @@ class _HomeScreenState extends State<HomeScreen>
           body: SafeArea(
             child: Stack(
               children: [
-                // Background poster + subtle gradient overlay
                 Positioned.fill(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 350),
@@ -335,10 +329,8 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
 
-                // Content
                 Column(
                   children: [
-                    // Top AppBar
                     AppBar(
                       backgroundColor: Colors.transparent,
                       elevation: 0,
@@ -372,7 +364,6 @@ class _HomeScreenState extends State<HomeScreen>
                       ],
                     ),
 
-                    // Info top-right
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -383,7 +374,6 @@ class _HomeScreenState extends State<HomeScreen>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Title
                               Text(
                                 activeUniverse!["MoviewName"],
                                 textAlign: TextAlign.right,
@@ -426,7 +416,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 ],
                               ),
                               const SizedBox(height: 14),
-                              // Divider deco
                               Container(
                                 color: Colors.white,
                                 width: 48,
@@ -434,11 +423,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 14),
 
-                              // Actions : Play trailer + Bande-annonce + Audio toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  // Trailer button (rounded)
                                   Container(
                                     decoration: BoxDecoration(
                                       border: Border.all(color: Colors.white70),
@@ -463,7 +450,6 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   ),
                                   const SizedBox(width: 16),
-                                  // Pause/Resume Audio
                                   IconButton(
                                     tooltip: _isPaused
                                         ? 'Reprendre le son'
@@ -479,7 +465,6 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ],
                               ),
-                              // 🔥 Rubrique Spoil
                               if (activeUniverse!["spoil"] != null &&
                                   activeUniverse!["spoil"]
                                       .toString()
@@ -540,8 +525,6 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
-
-  // (L’ancienne updateTitlePlacement n’est plus nécessaire car l’UI est fixe en haut-droite)
 
   showVideo() async {
     setState(() {

@@ -3,21 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:marvel_cinematic_universe/helpers/utilities.dart';
 
-class AppSettings {
-  static const String Endpoint = 'http://127.0.0.1:52285';
-  static const String ProjectId = 'marvelcomics.suchit.dev';
-}
-
-class AppWriteDatabaseCollection {
-  static const String UniverseMaster = '6275567eae9fb936f17b';
-}
-
-class ErrorMessages {
-  static const String InternalServer = '500 - Internal Server Error! APEX.';
-  static const String Exception =
-      'Something went wrong! Please, try after some times.';
-}
-
 class ImgPaths {
   static const String logo_marvel_universe =
       'assets/images/logo-marvel-universe.png';

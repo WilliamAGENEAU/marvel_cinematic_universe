@@ -82,7 +82,6 @@ class _TierListTableState extends State<TierListTable> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          // ✅ Partie scrollable avec les notes (sauf "Non classé")
           Expanded(
             child: ListView(
               children: scores
@@ -91,8 +90,6 @@ class _TierListTableState extends State<TierListTable> {
                   .toList(),
             ),
           ),
-
-          // ✅ Partie fixe en bas pour "Non classé"
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.25,
             child: _buildRankContainer("Non classé"),
@@ -104,7 +101,7 @@ class _TierListTableState extends State<TierListTable> {
 
   Widget _buildRankContainer(String score) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.18, // ✅ taille fixe
+      height: MediaQuery.of(context).size.height * 0.18,
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(

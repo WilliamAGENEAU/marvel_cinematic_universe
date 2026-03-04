@@ -58,7 +58,7 @@ class _TimelineSectionState extends State<TimelineSection> {
 
   Set<String> selectedNiveaux = {"immanquable"};
 
-  GlobalKey? _activeItemKey; // ✅ une seule clé pour l’item actif
+  GlobalKey? _activeItemKey;
 
   @override
   void didUpdateWidget(covariant TimelineSection oldWidget) {
@@ -120,7 +120,6 @@ class _TimelineSectionState extends State<TimelineSection> {
       ),
     ];
 
-    // 🔒 Immanquable forcé MAIS invisible
     niveauController.addItems([
       DropdownItem(label: "Immanquable", value: immanquable),
     ]);
@@ -149,88 +148,96 @@ class _TimelineSectionState extends State<TimelineSection> {
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
           child: Row(
             children: [
-              _buildDropdown(
-                value: selectedSaga,
-                items: sagas.keys.toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      selectedSaga = val;
-                      selectedPhase = sagas[val]!.first;
-                      _activeItemKey = null;
-                    });
-                    _onPhaseChanged(selectedPhase);
-                  }
-                },
-              ),
-              const SizedBox(width: 6),
-              _buildDropdown(
-                value: selectedPhase,
-                items: sagas[selectedSaga]!,
-                onChanged: (val) {
-                  if (val != null) _onPhaseChanged(val);
-                },
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 190,
-                height: 42,
-                child: MultiDropdown<Niveau>(
-                  items: niveauItems,
-                  controller: niveauController,
-                  enabled: true,
-                  searchEnabled: false,
+              Expanded(
+                flex: 7,
 
-                  chipDecoration: const ChipDecoration(
-                    backgroundColor: Colors.black,
-                    labelStyle: TextStyle(color: Colors.white),
-                    wrap: false,
-                  ),
-
-                  fieldDecoration: FieldDecoration(
-                    hintText: 'Filtres',
-                    hintStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                    ),
-                    showClearIcon: false,
-                    backgroundColor: Colors.black,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.white24),
-                    ),
-                  ),
-
-                  dropdownDecoration: const DropdownDecoration(
-                    backgroundColor: Colors.black,
-                    maxHeight: 180,
-                  ),
-
-                  dropdownItemDecoration: DropdownItemDecoration(
-                    textColor: Colors.white,
-                    selectedIcon: const Icon(
-                      Icons.check_circle,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-
-                  // ✅ SIGNATURE CORRECTE
-                  onSelectionChange: (selectedItems) {
-                    setState(() {
-                      selectedNiveaux = {
-                        "immanquable", // 🔒 toujours présent
-                        ...selectedItems.map((e) => e.key),
-                      };
-                      _activeItemKey = null;
-                    });
+                child: _buildDropdown(
+                  value: selectedSaga,
+                  items: sagas.keys.toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        selectedSaga = val;
+                        selectedPhase = sagas[val]!.first;
+                        _activeItemKey = null;
+                      });
+                      _onPhaseChanged(selectedPhase);
+                    }
                   },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 4,
+                child: _buildDropdown(
+                  value: selectedPhase,
+                  items: sagas[selectedSaga]!,
+                  onChanged: (val) {
+                    if (val != null) _onPhaseChanged(val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 6,
+                child: SizedBox(
+                  width: 190,
+                  height: 42,
+                  child: MultiDropdown<Niveau>(
+                    items: niveauItems,
+                    controller: niveauController,
+                    enabled: true,
+                    searchEnabled: false,
+
+                    chipDecoration: const ChipDecoration(
+                      backgroundColor: Colors.black,
+                      labelStyle: TextStyle(color: Colors.white),
+                      wrap: false,
+                    ),
+
+                    fieldDecoration: FieldDecoration(
+                      hintText: 'Filtres',
+                      hintStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                      showClearIcon: false,
+                      backgroundColor: Colors.black,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.white24),
+                      ),
+                    ),
+
+                    dropdownDecoration: const DropdownDecoration(
+                      backgroundColor: Colors.black,
+                      maxHeight: 180,
+                    ),
+
+                    dropdownItemDecoration: DropdownItemDecoration(
+                      textColor: Colors.white,
+                      selectedIcon: const Icon(
+                        Icons.check_circle,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+
+                    onSelectionChange: (selectedItems) {
+                      setState(() {
+                        selectedNiveaux = {
+                          "immanquable",
+                          ...selectedItems.map((e) => e.key),
+                        };
+                        _activeItemKey = null;
+                      });
+                    },
+                  ),
                 ),
               ),
             ],
           ),
         ),
 
-        // 🔽 Timeline
         SizedBox(
           height: widget.isHorizontal ? itemHeight + 50 : null,
           child: ListView.builder(
@@ -249,11 +256,9 @@ class _TimelineSectionState extends State<TimelineSection> {
               final phaseColor = widget.phaseColorFor(movie["Phase"]);
               final seen = widget.seenIds.contains(movie["id"]);
 
-              // ✅ clé unique si actif
               final itemKey = isActive ? GlobalKey() : ValueKey(movie["id"]);
               if (isActive) _activeItemKey = itemKey as GlobalKey;
 
-              // Miniature + bouton vu
               final thumb = Stack(
                 children: [
                   ClipRRect(
@@ -261,12 +266,12 @@ class _TimelineSectionState extends State<TimelineSection> {
                     child: ColorFiltered(
                       colorFilter: seen
                           ? const ColorFilter.mode(
-                              Colors.grey,
-                              BlendMode.saturation,
-                            )
-                          : const ColorFilter.mode(
                               Colors.transparent,
                               BlendMode.dst,
+                            )
+                          : const ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.saturation,
                             ),
                       child: Image.asset(
                         'assets/images/thumbnail/${movie["Thumbnail"]}',
@@ -390,7 +395,6 @@ class _TimelineSectionState extends State<TimelineSection> {
     );
   }
 
-  /// 🔽 Dropdown stylisé
   Widget _buildDropdown({
     required String value,
     required List<String> items,
@@ -398,7 +402,7 @@ class _TimelineSectionState extends State<TimelineSection> {
     String Function(String)? labelBuilder,
   }) {
     return Container(
-      height: 42, // ✅ plus petit
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.3),
@@ -408,7 +412,7 @@ class _TimelineSectionState extends State<TimelineSection> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          isDense: true, // ✅ compact
+          isDense: true,
           dropdownColor: Colors.black87,
           icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
           style: const TextStyle(color: Colors.white, fontSize: 13),
