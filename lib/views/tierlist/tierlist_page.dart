@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
-import 'package:marvel_cinematic_universe/views/shared/aside.dart';
-import 'package:marvel_cinematic_universe/views/shared/tierlist.dart';
+import 'package:marvel_cinematic_universe/views/aside.dart';
+import 'package:marvel_cinematic_universe/views/tierlist/tierlist.dart';
 import 'package:shrink_sidemenu/shrink_sidemenu.dart';
 
 class TierListPage extends StatefulWidget {

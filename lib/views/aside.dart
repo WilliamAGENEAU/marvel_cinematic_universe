@@ -4,7 +4,7 @@ import 'package:fluttericon/font_awesome5_icons.dart';
 import 'package:marvel_cinematic_universe/controller/universeController.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
 import 'package:marvel_cinematic_universe/helpers/utilities.dart';
-import 'package:marvel_cinematic_universe/views/home/tierlist_page.dart';
+import 'package:marvel_cinematic_universe/views/tierlist/tierlist_page.dart';
 import 'package:marvel_cinematic_universe/views/quiz/quiz_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

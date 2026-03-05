@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:marvel_cinematic_universe/widgets/quiz_option.dart';
-import 'package:marvel_cinematic_universe/widgets/quiz_results_page';
+import 'package:marvel_cinematic_universe/widgets/quiz_results_page.dart';
 
 class OstQuizPage extends StatefulWidget {
   const OstQuizPage({super.key});
