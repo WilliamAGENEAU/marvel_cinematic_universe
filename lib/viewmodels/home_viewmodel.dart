@@ -1,19 +1,54 @@
-import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:marvel_cinematic_universe/controller/universeController.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
-  List<Map<String, dynamic>> universe = universeMock;
+  List<Map<String, dynamic>> universe = [];
   Map<String, dynamic>? activeMovie;
   Set<int> seenIds = {};
   bool isPaused = false;
+  bool isLoading = true;
 
   HomeViewModel() {
-    activeMovie = universe.isNotEmpty ? universe.first : null;
-    _loadSeen();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await fetchUniverse();
+    await _loadSeen();
+    isLoading = false;
+    notifyListeners();
+  }
+
+  // --- Chargement Supabase ---
+  Future<void> fetchUniverse() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('universe')
+          .select()
+          .order('id', ascending: true);
+
+      universe = List<Map<String, dynamic>>.from(response);
+      if (universe.isNotEmpty) {
+        activeMovie = universe.first;
+      }
+    } catch (e) {
+      debugPrint("Erreur Supabase: $e");
+    }
+  }
+
+  Future<void> playMusic(String? url) async {
+    if (url == null || url.isEmpty) {
+      await _audioPlayer.stop();
+    } else {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(UrlSource(url));
+    }
+    isPaused = false;
+    notifyListeners();
   }
 
   // --- Gestion du "Vu" ---
@@ -36,15 +71,9 @@ class HomeViewModel extends ChangeNotifier {
   double get watchProgress =>
       universe.isEmpty ? 0 : (seenIds.length / universe.length) * 100;
 
-  // --- Gestion Audio ---
-  Future<void> playMusic(String? fileName) async {
-    if (fileName == null || fileName.isEmpty) {
-      await _audioPlayer.stop();
-    } else {
-      await _audioPlayer.stop();
-      await _audioPlayer.play(AssetSource("musics/$fileName"));
-    }
-    isPaused = false;
+  void updateActiveMovie(Map<String, dynamic> movie) {
+    activeMovie = movie;
+    playMusic(movie["music_url"]);
     notifyListeners();
   }
 
@@ -52,17 +81,5 @@ class HomeViewModel extends ChangeNotifier {
     isPaused ? _audioPlayer.resume() : _audioPlayer.pause();
     isPaused = !isPaused;
     notifyListeners();
-  }
-
-  void updateActiveMovie(Map<String, dynamic> movie) {
-    activeMovie = movie;
-    playMusic(movie["music"]);
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
   }
 }

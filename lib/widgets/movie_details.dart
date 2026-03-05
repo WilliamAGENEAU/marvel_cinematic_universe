@@ -24,13 +24,13 @@ class MovieDetails extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          movie["MoviewName"],
+          movie["movie_name"] ?? "Nom inconnu",
           textAlign: TextAlign.right,
           style: GoogleFonts.anton(fontSize: 26, color: Colors.white),
         ),
         const SizedBox(height: 10),
         Text(
-          "${movie["ReleaseDate"]}  •  ${movie["RunTime"]}",
+          "${movie["release_date"] ?? "Date inconnue"}  •  ${movie["run_time"] ?? "Durée inconnue"}",
           style: GoogleFonts.openSans(fontSize: 17, color: Colors.white70),
         ),
         const SizedBox(height: 14),

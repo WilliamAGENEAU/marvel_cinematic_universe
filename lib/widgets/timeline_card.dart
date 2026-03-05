@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class TimelineCard extends StatelessWidget {
   final Map<String, dynamic> movie;
@@ -19,9 +20,10 @@ class TimelineCard extends StatelessWidget {
   });
 
   Color _getNiveauColor(String? niveau) {
-    return switch (niveau) {
+    final level = niveau?.toLowerCase();
+    return switch (level) {
       "immanquable" => Colors.redAccent,
-      "interessant" => Colors.orangeAccent,
+      "interessant" || "intéressant" => Colors.orangeAccent,
       "optionnel" => Colors.greenAccent,
       _ => Colors.grey,
     };
@@ -29,6 +31,8 @@ class TimelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = movie["thumbnail_url"] ?? "";
+
     return AnimatedScale(
       duration: const Duration(milliseconds: 250),
       scale: isActive ? 1.08 : 1.0,
@@ -42,16 +46,45 @@ class TimelineCard extends StatelessWidget {
                 isSeen ? Colors.transparent : Colors.grey,
                 isSeen ? BlendMode.dst : BlendMode.saturation,
               ),
-              child: Image.asset(
-                'assets/images/thumbnail/${movie["Thumbnail"]}',
-                height: height,
-                width: width,
-                fit: BoxFit.cover,
-              ),
+              child: imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      height: height,
+                      width: width,
+                      fit: BoxFit.cover,
+                      memCacheWidth:
+                          (width * MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[900],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.white24,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: Colors.black,
+                      height: height,
+                      width: width,
+                    ),
             ),
           ),
           Positioned(top: 6, right: 6, child: _buildCheckIcon()),
-          Positioned(bottom: 8, left: 8, child: _buildNiveauBadge()),
+          Positioned(bottom: 12, left: 8, child: _buildNiveauBadge()),
         ],
       ),
     );

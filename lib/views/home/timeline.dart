@@ -65,13 +65,23 @@ class _TimelineSectionState extends State<TimelineSection> {
     });
 
     final movie = widget.universe.firstWhere(
-      (m) => m["Phase"] == phase,
-      orElse: () => {},
+      (m) {
+        final mPhase = (m["phase"] ?? m["Phase"])?.toString();
+        final mNiveau = (m["niveau"])?.toString().toLowerCase();
+
+        return mPhase == phase && mNiveau == "immanquable";
+      },
+      orElse: () => widget.universe.firstWhere(
+        (m) => (m["phase"] ?? m["Phase"])?.toString() == phase,
+        orElse: () => {},
+      ),
     );
 
     if (movie.isNotEmpty) {
       widget.onTapMovie(movie);
-      _scrollToActive(movie["id"]);
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToActive(movie["id"]);
+      });
     }
   }
 
@@ -103,7 +113,7 @@ class _TimelineSectionState extends State<TimelineSection> {
     final filteredList = widget.universe
         .where(
           (m) =>
-              m["Phase"] == selectedPhase &&
+              m["phase"] == selectedPhase &&
               selectedNiveaux.contains(m["niveau"]),
         )
         .toList();
@@ -126,7 +136,7 @@ class _TimelineSectionState extends State<TimelineSection> {
             setState(() {
               selectedNiveaux = {
                 "immanquable",
-                ...selectedNiveauxList.map((n) => n.key),
+                ...selectedNiveauxList.map((n) => n.label.toLowerCase()),
               };
               _activeItemKey = null;
             });

@@ -1,7 +1,6 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:fluttericon/font_awesome5_icons.dart';
-import 'package:marvel_cinematic_universe/controller/universeController.dart';
 import 'package:marvel_cinematic_universe/helpers/static-data.dart';
 import 'package:marvel_cinematic_universe/helpers/utilities.dart';
 import 'package:marvel_cinematic_universe/views/tierlist/tierlist_page.dart';
@@ -12,9 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - [onStopAudio] pour couper la musique quand on va sur la Tierlist
 /// - [closeMenu] pour fermer le SideMenu avant navigation
 Widget ASide(
-  String email,
   BuildContext context, {
   Future<void> Function()? onStopAudio,
+  List<Map<String, dynamic>>? universe,
   VoidCallback? closeMenu,
 }) {
   Future<void> openTierlist() async {
@@ -29,7 +28,7 @@ Widget ASide(
         .map(int.parse)
         .toSet();
 
-    final seenMovies = universeMock
+    final seenMovies = universe!
         .where((m) => seenIds.contains(m["id"] as int))
         .toList(growable: false);
 
@@ -55,23 +54,6 @@ Widget ASide(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16.0),
-                    Text(
-                      email,
-                      style: TextStyle(
-                        color: DefaultColors.baby_white,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 20.0),
-                  ],
-                ),
-              ),
               ListTile(
                 onTap: () {
                   closeMenu?.call();

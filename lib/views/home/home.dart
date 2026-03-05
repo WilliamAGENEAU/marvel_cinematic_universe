@@ -7,6 +7,7 @@ import 'package:marvel_cinematic_universe/views/home/timeline.dart';
 import 'package:marvel_cinematic_universe/widgets/movie_details.dart';
 import 'package:shrink_sidemenu/shrink_sidemenu.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final HomeViewModel vm = HomeViewModel();
   final GlobalKey<SideMenuState> _sideMenuKey = GlobalKey<SideMenuState>();
   Color menuIconColor = Colors.white;
-  Map<String, dynamic>? activeUniverse;
   late YoutubePlayerController _ytbPlayerController;
 
   @override
@@ -26,22 +26,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListenableBuilder(
       listenable: vm,
       builder: (context, _) {
-        final movie = vm.activeMovie;
-        if (movie == null) {
+        if (vm.isLoading) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: Colors.black,
+            body: Center(child: CircularProgressIndicator(color: Colors.red)),
           );
         }
+
+        final movie = vm.activeMovie;
+        if (movie == null) return const SizedBox.shrink();
 
         return SideMenu(
           key: _sideMenuKey,
           background: DefaultColors.dark,
           type: SideMenuType.shrinkNSlide,
-          menu: ASide("", context, onStopAudio: () => vm.playMusic(null)),
+          menu: ASide(
+            context,
+            onStopAudio: () => vm.playMusic(null),
+            universe: vm.universe,
+          ),
           child: Scaffold(
             body: Stack(
               children: [
-                _buildBackground(movie["Thumbnail"]),
+                _buildBackground(movie["thumbnail_url"]),
                 SafeArea(
                   child: Column(
                     children: [
@@ -49,9 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       MovieDetails(
                         movie: movie,
                         isAudioPaused: vm.isPaused,
-                        onPlayVideo: () => _showVideoDialog(),
+                        onPlayVideo: () =>
+                            _showVideoDialog(movie['youtube_id']),
                         onToggleAudio: vm.togglePlayPause,
-                        onShowSpoil: () => _showSpoilDialog(),
+                        onShowSpoil: () => _showSpoilDialog(movie['spoil']),
                       ),
                       const Spacer(),
                       TimelineSection(
@@ -74,17 +82,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBackground(String thumb) {
+  Widget _buildBackground(String? imageUrl) {
     return Positioned.fill(
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 350),
+        duration: const Duration(milliseconds: 500),
         child: Container(
-          key: ValueKey(thumb),
+          key: ValueKey(imageUrl),
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/images/thumbnail/$thumb"),
-              fit: BoxFit.cover,
-            ),
+            image: (imageUrl != null && imageUrl.isNotEmpty)
+                ? DecorationImage(
+                    image: CachedNetworkImageProvider(imageUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+            color: Colors.black,
           ),
           foregroundDecoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -117,10 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showSpoilDialog() {
-    final spoilText = activeUniverse?["spoil"];
+  void _showSpoilDialog(String? spoilText) {
     if (spoilText == null || spoilText.toString().isEmpty) return;
-
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -161,10 +170,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  _showVideoDialog() async {
+  void _showVideoDialog(String? youtubeId) async {
+    if (youtubeId == null || youtubeId.isEmpty) return;
     setState(() {
       _ytbPlayerController = YoutubePlayerController(
-        initialVideoId: activeUniverse!['YoutubeId'],
+        initialVideoId: youtubeId,
         flags: const YoutubePlayerFlags(autoPlay: true),
       );
     });

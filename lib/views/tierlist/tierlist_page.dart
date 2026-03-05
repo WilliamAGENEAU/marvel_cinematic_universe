@@ -31,7 +31,6 @@ class _TierListPageState extends State<TierListPage> {
       background: DefaultColors.dark,
       type: SideMenuType.shrinkNSlide,
       menu: ASide(
-        "",
         context,
         closeMenu: () => _sideMenuKey.currentState?.closeSideMenu(),
       ),
