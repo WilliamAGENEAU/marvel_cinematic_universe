@@ -32,20 +32,21 @@ class _TierListPageState extends State<TierListPage> {
       type: SideMenuType.shrinkNSlide,
       menu: ASide(
         context,
+        universe: widget.seenMovies,
         closeMenu: () => _sideMenuKey.currentState?.closeSideMenu(),
       ),
       child: Scaffold(
-        backgroundColor: DefaultColors.dark,
+        backgroundColor: Colors.black,
         appBar: AppBar(
-          backgroundColor: DefaultColors.dark,
+          backgroundColor: Colors.black,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: _toggleMenu,
           ),
           title: const Text(
-            "Tierlist MCU",
-            style: TextStyle(color: Colors.white),
+            "Ma Tierlist MCU",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
         body: TierListTable(seenMovies: widget.seenMovies),

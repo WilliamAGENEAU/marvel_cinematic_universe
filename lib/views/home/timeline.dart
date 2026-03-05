@@ -31,18 +31,57 @@ class TimelineSection extends StatefulWidget {
 
 class _TimelineSectionState extends State<TimelineSection> {
   final ScrollController _scrollController = ScrollController();
-  String selectedSaga = "Saga de l'infini";
-  String selectedPhase = "Phase 1";
+  String selectedSaga = "";
+  String selectedPhase = "";
   Set<String> selectedNiveaux = {"immanquable"};
+  Map<String, List<String>> sagas = {};
+
   GlobalKey? _activeItemKey;
   late final List<DropdownItem<Niveau>> niveauItems;
   final MultiSelectController<Niveau> niveauController =
       MultiSelectController<Niveau>();
 
-  final sagas = {
-    "Saga de l'infini": ["Phase 1", "Phase 2", "Phase 3"],
-    "Saga du multivers": ["Phase 4", "Phase 5", "Phase 6"],
-  };
+  @override
+  void initState() {
+    _initializeData();
+    super.initState();
+  }
+
+  void _initializeData() {
+    final Map<String, Set<String>> structure = {};
+
+    for (var m in widget.universe) {
+      final s = m["saga"]?.toString() ?? "Inconnu";
+      final p = m["phase"]?.toString() ?? "Inconnu";
+
+      if (!structure.containsKey(s)) structure[s] = {};
+      structure[s]!.add(p);
+    }
+
+    sagas = structure.map(
+      (key, value) => MapEntry(key, value.toList()..sort()),
+    );
+
+    if (sagas.isNotEmpty) {
+      selectedSaga = sagas.containsKey("Saga de l'infini")
+          ? "Saga de l'infini"
+          : sagas.keys.first;
+      selectedPhase = sagas[selectedSaga]!.first;
+    }
+
+    niveauItems = [
+      DropdownItem(
+        label: "Interessant 🟠",
+        value: Niveau("interessant", "Interessant", Colors.orangeAccent),
+      ),
+      DropdownItem(
+        label: "Optionnel 🟢",
+        value: Niveau("optionnel", "Optionnel", Colors.blueAccent),
+      ),
+    ];
+
+    niveauController.clearAll();
+  }
 
   void _scrollToActive(int activeId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -66,57 +105,35 @@ class _TimelineSectionState extends State<TimelineSection> {
 
     final movie = widget.universe.firstWhere(
       (m) {
-        final mPhase = (m["phase"] ?? m["Phase"])?.toString();
-        final mNiveau = (m["niveau"])?.toString().toLowerCase();
-
-        return mPhase == phase && mNiveau == "immanquable";
+        final p = (m["phase"] ?? m["Phase"] ?? "").toString().trim();
+        final n = (m["niveau"] ?? "").toString().toLowerCase().trim();
+        return p == phase && n == "immanquable";
       },
       orElse: () => widget.universe.firstWhere(
-        (m) => (m["phase"] ?? m["Phase"])?.toString() == phase,
+        (m) => (m["phase"] ?? m["Phase"] ?? "").toString().trim() == phase,
         orElse: () => {},
       ),
     );
 
     if (movie.isNotEmpty) {
       widget.onTapMovie(movie);
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToActive(movie["id"]);
-      });
+      _scrollToActive(movie["id"]);
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    final immanquable = Niveau(
-      "immanquable 🔴",
-      "Immanquable",
-      Colors.redAccent,
-    );
-    niveauItems = [
-      DropdownItem(
-        label: "Intéressant 🟠",
-        value: Niveau("interessant", "Intéressant", Colors.orangeAccent),
-      ),
-      DropdownItem(
-        label: "Optionnel 🟢",
-        value: Niveau("optionnel", "Optionnel", Colors.blueAccent),
-      ),
-    ];
-    niveauController.addItems([
-      DropdownItem(label: "Immanquable", value: immanquable),
-    ]);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final filteredList = widget.universe
-        .where(
-          (m) =>
-              m["phase"] == selectedPhase &&
-              selectedNiveaux.contains(m["niveau"]),
-        )
-        .toList();
+    final filteredList = widget.universe.where((m) {
+      final String movieSaga = m["saga"]?.toString() ?? "";
+      final String moviePhase = m["phase"]?.toString() ?? "";
+      final String movieNiveau = m["niveau"]?.toString() ?? "";
+
+      bool niveauMatch = selectedNiveaux.contains(movieNiveau);
+
+      return movieSaga == selectedSaga &&
+          moviePhase == selectedPhase &&
+          niveauMatch;
+    }).toList();
 
     return Column(
       children: [

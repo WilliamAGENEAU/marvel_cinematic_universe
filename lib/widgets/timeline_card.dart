@@ -23,7 +23,7 @@ class TimelineCard extends StatelessWidget {
     final level = niveau?.toLowerCase();
     return switch (level) {
       "immanquable" => Colors.redAccent,
-      "interessant" || "intéressant" => Colors.orangeAccent,
+      "interessant" || "interessant" => Colors.orangeAccent,
       "optionnel" => Colors.greenAccent,
       _ => Colors.grey,
     };

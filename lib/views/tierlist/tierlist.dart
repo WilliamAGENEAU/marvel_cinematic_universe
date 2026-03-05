@@ -1,6 +1,7 @@
 // tierlist.dart
 // ignore_for_file: deprecated_member_use
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -101,7 +102,7 @@ class _TierListTableState extends State<TierListTable> {
 
   Widget _buildRankContainer(String score) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.18,
+      height: MediaQuery.of(context).size.height * 0.20,
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -159,19 +160,51 @@ class _TierListTableState extends State<TierListTable> {
   }
 
   Widget _buildMovieCard(Map<String, dynamic> movie) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 5),
-      height: 160,
-      child: AspectRatio(
-        aspectRatio: 9 / 16,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.asset(
-            'assets/images/thumbnail/${movie["Thumbnail"]}',
-            fit: BoxFit.cover,
-          ),
+    final imageUrl = movie["thumbnail_url"] ?? "";
+    final itemWidth = (MediaQuery.of(context).size.width - 64) / 4;
+    final itemHeight = itemWidth * 16 / 9;
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: imageUrl.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  height: itemHeight,
+                  width: itemWidth,
+                  fit: BoxFit.cover,
+                  memCacheWidth:
+                      (itemWidth * MediaQuery.of(context).devicePixelRatio)
+                          .round(),
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey[900],
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[900],
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: Colors.white24,
+                    ),
+                  ),
+                )
+              : Container(
+                  color: Colors.black,
+                  height: itemHeight,
+                  width: itemWidth,
+                ),
         ),
-      ),
+      ],
     );
   }
 
